@@ -72,37 +72,7 @@ FROM token_holder
                 x = query,
                 fixed = TRUE)
 
-  qtoken <- shroomDK::create_query_token(query = query, api_key = api_key)
-  res <- shroomDK::get_query_from_token(qtoken$token, api_key = api_key)
-  amount_holding <- shroomDK::clean_query(res)
+  amount_holding <- shroomDK::auto_paginate_query(query, api_key)
 
-  # Handle Pagination via ShroomDK
-  # up to 1M rows max
-  # get 100,000 rows at a time
-  # stop when the most recent page < 100,000 items.
-  # otherwise stop at 1M total rows.
-  # NOTE: in the future, if we allow > 1M rows, will need to update this.
-
-  if(nrow(amount_holding) == 100000){
-    warning("Checking for additional pages of data...")
-    for(i in 2:10){
-      temp_page <- clean_query(
-        shroomDK::get_query_from_token(qtoken$token,
-                                       api_key = api_key,
-                                       page_number = i)
-      )
-
-      amount_holding <- rbind.data.frame(amount_holding, temp_page)
-
-      if(nrow(temp_page) < 100000 | i == 10){
-        # done
-      return(amount_holding)
-
-      } else {
-        # continue
-        }
-    }
-  } else {
-    return(amount_holding)
-  }
+  return(amount_holding)
 }
