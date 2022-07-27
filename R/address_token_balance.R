@@ -8,7 +8,7 @@
 #'
 #' @return
 #' @export
-#'
+#' @import jsonlite httr
 #' @examples
 #' #' \dontrun{
 #' address_token_balance(
@@ -73,29 +73,36 @@ FROM token_holder
                 fixed = TRUE)
 
   qtoken <- shroomDK::create_query_token(query = query, api_key = api_key)
-  res <- shroomDK::get_query_from_token(qtoken, api_key = api_key)
-  df <- shroomDK::clean_query(res)
+  res <- shroomDK::get_query_from_token(qtoken$token, api_key = api_key)
+  amount_holding <- shroomDK::clean_query(res)
 
   # Handle Pagination via ShroomDK
   # up to 1M rows max
   # get 100,000 rows at a time
   # stop when the most recent page < 100,000 items.
   # otherwise stop at 1M total rows.
+  # NOTE: in the future, if we allow > 1M rows, will need to update this.
 
-  if(nrow(df) == 100000){
+  if(nrow(amount_holding) == 100000){
+    warning("Checking for additional pages of data...")
     for(i in 2:10){
-      temp <- clean_query(
-        shroomDK::get_query_from_token(qtoken, api_key = api_key, page_number = i)
+      temp_page <- clean_query(
+        shroomDK::get_query_from_token(qtoken$token,
+                                       api_key = api_key,
+                                       page_number = i)
       )
-      df <- rbind.data.frame(df, temp)
 
-      if(nrow(temp) < 100000){
+      amount_holding <- rbind.data.frame(amount_holding, temp_page)
 
-      }
+      if(nrow(temp_page) < 100000 | i == 10){
+        # done
+      return(amount_holding)
 
+      } else {
+        # continue
+        }
     }
-
+  } else {
+    return(amount_holding)
   }
-
-  return(amount_holding)
 }
