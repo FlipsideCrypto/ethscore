@@ -1,22 +1,52 @@
-#' Title
+#' Time Weighted Address Token Balance
 #'
-#' @param token_address
-#' @param min_tokens
-#' @param block_min
-#' @param block_max
-#' @param amount_weighting
-#' @param api_key
+#' Time weighted token balance of an address between 2 block heights.
+#' Holding 20 UNI for 10,000 blocks might be more interesting to score than someone
+#' buying 20 UNI right before a snapshot for an airdrop.
 #'
-#' @return
+#' @param token_address ERC20 token contract address to assess balance.
+#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+#' ignoring dust balances.
+#' @param block_min Initial block to start scoring balances over time, default 0 (genesis block).
+#' @param block_max The block height to assess balance at (for reproducibility).
+#' @param amount_weighting Weight by amounts held across time, default TRUE. If FALSE, it treats
+#' all amounts as binary. Person had at least `min_tokens` at a block or they did not. To NOT
+#' weight by time, use `address_token_balance()` instead of this function.
+#' @param api_key Flipside Crypto ShroomDK API Key to create and access SQL queries.
+#'
+#' @return A data frame of the form:
+#' | |  |
+#' | ------------- |:-------------:|
+#' | ADDRESS       | The EOA or contract that holds the balance |
+#' | TOKEN_ADDRESS | ERC20 address provided |
+#' | time_weighted_score | 1 point per 1 token held for 1,000 blocks (amount_weighting = FALSE is
+#' 1 point per 1000 blocks where balance was above min_token) |
+#' @md
 #' @export
-#'
+#' @import jsonlite httr
 #' @examples
+#' \dontrun{
+#' address_time_weighted_token_balance(
+#' token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI token
+#'  min_tokens = 0.01,
+#'  block_min = 10000000,
+#'  block_max = 15000000,
+#'  amount_weighting = TRUE,
+#'  api_key = readLines("api_key.txt")
+#' )
+#'}
 address_time_weighted_token_balance <- function(token_address, min_tokens = 0.0001,
                                                 block_min = 0,
                                                 block_max,
                                                 amount_weighting = TRUE,
                                                 api_key){
 
+  # Scientific notation is troublesome in R<>SQL
+  block_min <- format(block_min, scientific = FALSE)
+  block_max <- format(block_max, scientific = FALSE)
+
+
+   # see ?address_token_balance for info on NEW_VALUE
   weight = ifelse(amount_weighting, "NEW_VALUE", "1")
 
   query <- {
@@ -40,18 +70,18 @@ WITH block_tracked AS (
        ORDER BY address desc, BLOCK desc),
 
    time_points AS (
--- scale down time points by 10K to reduce integer overflow risk
+-- scale down time points by 1,000 to reduce integer overflow risk
                 -- use 1 for any amount, otherwise use NEW_VALUE
-       SELECT *, (_WEIGHT_ * (holder_next_block - block) )/10000 as time_points
+       SELECT *, (_WEIGHT_ * (holder_next_block - block) )/1000 as time_points
     FROM block_tracked
     )
 
   -- Aggregation here assumes no minimum required points.
 
-    SELECT address, token_address, sum(time_points) as _timepoints
+    SELECT address, token_address, sum(time_points) as time_weighted_score
 FROM time_points
 GROUP BY address, token_address
-ORDER BY _timepoints DESC;
+ORDER BY time_weighted_score DESC;
 "
   }
 
@@ -76,8 +106,8 @@ ORDER BY _timepoints DESC;
                 x = query,
                 fixed = TRUE)
 
-  amount_holding <- shroomDK::auto_paginate_query(query, api_key)
+  weighted_holding <- shroomDK::auto_paginate_query(query, api_key)
 
- return(amount_holding)
+ return(weighted_holding)
 
 }

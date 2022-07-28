@@ -1,16 +1,31 @@
 
 #' Address Token Balance
 #'
-#' @param token_address ERC20 token contract address to assess balance
-#' @param min_tokens the minimum amount of token needed to qualify (assumes 1e18 decimals)
-#' @param block_max The block height to assess balance at (for reproducibility)
-#' @param api_key Flipside ShroomDK API Key to access queries.
+#' Token balance of an address at a specific block height.
+#' Alice held 20 UNI at block 15,000,000.
 #'
-#' @return
+#' @param token_address ERC20 token contract address to assess balance
+#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+#' ignoring dust balances.
+#' @param block_max The block height to assess balance at (for reproducibility)
+#' @param api_key Flipside Crypto ShroomDK API Key to create and access SQL queries.
+#'
+#' @return Data frame of form:
+#'
+#' | |  |
+#' | ------------- |:-------------:|
+#' | BLOCK         | Block where user last changed their balance (traded or transferred) |
+#' | HASH          | Tx hash where user last traded or transferred |
+#' | TOKEN_ADDRESS | ERC20 address provided |
+#' | ADDRESS       | The EOA or contract that holds the balance |
+#' | SYMBOL        | ERC20 symbol, e.g., "UNI" |
+#' | OLD_VALUE     | Amount of token before latest trade or transfer |
+#' | NEW_VALUE     | Amount of token as of BLOCK, i.e. balance after their latest trade or transfer|
+#' @md
 #' @export
 #' @import jsonlite httr
 #' @examples
-#' #' \dontrun{
+#' \dontrun{
 #' address_token_balance(
 #' token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI token
 #'  min_tokens = 0.01,
@@ -22,6 +37,9 @@ address_token_balance <- function(token_address,
                                   min_tokens = 0.0001,
                                   block_max,
                                   api_key = api_key){
+
+  # Scientific notation is troublesome in R<>SQL
+  block_max <- format(block_max, scientific = FALSE)
 
   query <- {
     "-- Get desired tokens
