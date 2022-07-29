@@ -29,7 +29,7 @@ A data frame of the form:\tabular{lc}{
     \tab  \cr
    ADDRESS \tab The EOA or contract that holds the balance \cr
    TOKEN_ADDRESS \tab ERC20 address provided \cr
-   NET_CHANGE \tab amount of tokens accumulated between block_min and block_max \cr
+   NET_CHANGE \tab net amount of tokens accumulated between block_min and block_max \cr
 }
 }
 \description{

@@ -16,7 +16,7 @@
 #' | ------------- |:-------------:|
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
-#' | NET_CHANGE | amount of tokens accumulated between block_min and block_max |
+#' | NET_CHANGE | net amount of tokens accumulated between block_min and block_max |
 #' @md
 #' @export
 #' @import jsonlite httr

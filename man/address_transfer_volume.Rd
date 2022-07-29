@@ -28,6 +28,7 @@ ignoring dust balances. Default 1.}
 A data frame of the form:\tabular{lc}{
     \tab  \cr
    ADDRESS \tab The EOA or contract with the volume \cr
+   TOKEN_ADDRESS \tab ERC20 address provided \cr
    VOLUME \tab amount of tokens transferred/traded between block_min and block_max \cr
 }
 }

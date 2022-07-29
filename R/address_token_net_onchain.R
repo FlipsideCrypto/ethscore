@@ -17,7 +17,7 @@
 #' | ------------- |:-------------:|
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
-#' | NET_ONTO_CHAIN | amount of tokens accumulated between block_min and block_max |
+#' | NET_ONTO_CHAIN | net amount of token taken from central exchanges between block_min and block_max |
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -79,9 +79,10 @@ cex_adjusted AS (
   FROM cex_ramp
   )
 
-  SELECT USER_ADDRESS as ADDRESS, SUM(ADJUSTED_AMOUNT) as NET_ONTO_CHAIN
+  SELECT USER_ADDRESS as ADDRESS, CONTRACT_ADDRESS as TOKEN_ADDRESS,
+  SUM(ADJUSTED_AMOUNT) as NET_ONTO_CHAIN
   FROM cex_adjusted
-  GROUP BY ADDRESS
+  GROUP BY ADDRESS, TOKEN_ADDRESS
   HAVING NET_ONTO_CHAIN >= _MIN_TOKENS_
   ;
     "

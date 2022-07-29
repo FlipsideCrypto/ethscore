@@ -19,8 +19,8 @@
 #' | ------------- |:-------------:|
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
-#' | time_weighted_score | 1 point per 1 token held for 1,000 blocks (amount_weighting = FALSE is
-#' 1 point per 1000 blocks where balance was above min_token) |
+#' | time_weighted_score | 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is
+#' 1 point per 1000 blocks where balance was above min_tokens) |
 #' @md
 #' @export
 #' @import jsonlite httr

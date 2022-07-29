@@ -15,6 +15,7 @@
 #' | |  |
 #' | ------------- |:-------------:|
 #' | ADDRESS | The EOA or contract with the volume |
+#' | TOKEN_ADDRESS | ERC20 address provided |
 #' | VOLUME | amount of tokens transferred/traded between block_min and block_max |
 #' @md
 #' @export
@@ -51,9 +52,9 @@ with token_changes AS (
 )
 
 -- ignoring direction of change (absolute value) and summing is volume of change
-SELECT HOLDER as user_address, SUM(ABS(CHANGE)) as VOLUME
+SELECT HOLDER as user_address, TOKEN_ADDRESS, SUM(ABS(CHANGE)) as VOLUME
 FROM token_changes
- GROUP BY HOLDER
+ GROUP BY HOLDER, TOKEN_ADDRESS
  HAVING VOLUME >= _MIN_TOKENS_
     "
   }
