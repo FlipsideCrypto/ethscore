@@ -21,6 +21,7 @@
 #' | SYMBOL        | ERC20 symbol, e.g., "UNI" |
 #' | OLD_VALUE     | Amount of token before latest trade or transfer |
 #' | NEW_VALUE     | Amount of token as of BLOCK, i.e. balance after their latest trade or transfer|
+#'
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -42,9 +43,7 @@ address_token_balance <- function(token_address,
   block_max <- format(block_max, scientific = FALSE)
 
   query <- {
-    "-- Get desired tokens
--- at a certain blockheight
-
+    "
 WITH block_tracked AS (
     SELECT TX_HASH AS hash,
            SYMBOL AS symbol,
@@ -61,19 +60,31 @@ WITH block_tracked AS (
 -- group by holder-token
 -- order by block desc
 -- pick most recent block
--- get holders
+-- get holders w/ address type label in case it is a contract
 
 token_holder AS (
 SELECT *, ROW_NUMBER() over (partition by address, token_address order by block DESC) as rownum
 FROM block_tracked
-)
+),
 
+latest_holdings AS (
 SELECT block, hash, token_address, symbol, address, old_value, new_value
 FROM token_holder
     WHERE rownum = 1 AND
     -- NOTE this applies to all tokens; to differentiate minimum for each token
     -- you can pull this table with 0 and filter after.
-          new_value >= _MIN_TOKENS_ -- <-- Place Minimum here.
+          new_value >= _MIN_TOKENS_
+    )
+
+-- include ability to filter out contract addresses if desired
+
+SELECT block, hash, token_address,
+  symbol, latest_holdings.address,
+  old_value, new_value,
+  IFNULL(tag_name, 'eoa') as address_type
+FROM latest_holdings LEFT JOIN
+  crosschain.core.address_tags ON
+  latest_holdings.address = crosschain.core.address_tags.address
 "
   }
 
