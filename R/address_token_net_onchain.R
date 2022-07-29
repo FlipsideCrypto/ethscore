@@ -1,7 +1,42 @@
-address_net_on_chain <- function(token_address = tolower("0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"),
-                                 block_min = 15001056,
-                                 block_max = 15051056,
+#' Address Token Net Onto-Chain
+#'
+#' Net transfer amount of tokens from a central exchange between two block heights.
+#' By default excludes net sellers. Alice net received 200 UNI from central exchanges
+#' between blocks 10,000,000 and 15,000,000.
+#'
+#' @param token_address ERC20 token contract address to assess change in balance.
+#' @param block_min Initial block to start scoring balances over time, default 0 (genesis block).
+#' @param block_max The block height to assess balance at (for reproducibility).
+#' @param decimal_reduction Most ERC20 have 18 decimals, but stablecoins often have only 6.
+#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+#' ignoring dust balances. Default 0.0001. Use -Inf to include net sellers (but note: API max is 1M rows.).
+#' @param api_key Flipside Crypto ShroomDK API Key to create and access SQL queries.
+#'
+#' @return A data frame of the form:
+#' | |  |
+#' | ------------- |:-------------:|
+#' | ADDRESS       | The EOA or contract that holds the balance |
+#' | TOKEN_ADDRESS | ERC20 address provided |
+#' | NET_ONTO_CHAIN | amount of tokens accumulated between block_min and block_max |
+#' @md
+#' @export
+#' @import jsonlite httr
+#' @examples
+#' \dontrun{
+#' address_net_on_chain(
+#' token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI token
+#'  block_min = 10000000,
+#'  block_max = 15000000,
+#'  decimal_reduction = 18,
+#'  min_tokens = 1,
+#'  api_key = readLines("api_key.txt")
+#' )
+#'}
+address_net_on_chain <- function(token_address,
+                                 block_min = 0,
+                                 block_max,
                                  decimal_reduction = 18,
+                                 min_tokens = 1,
                                  api_key){
 
   # Scientific notation is troublesome in R<>SQL
@@ -44,9 +79,11 @@ cex_adjusted AS (
   FROM cex_ramp
   )
 
-  SELECT USER_ADDRESS, SUM(ADJUSTED_AMOUNT) as net_ramped
+  SELECT USER_ADDRESS as ADDRESS, SUM(ADJUSTED_AMOUNT) as NET_ONTO_CHAIN
   FROM cex_adjusted
-  GROUP BY USER_ADDRESS;
+  GROUP BY ADDRESS
+  HAVING NET_ONTO_CHAIN >= _MIN_TOKENS_
+  ;
     "
   }
 
@@ -66,6 +103,11 @@ cex_adjusted AS (
                 replacement = decimal_reduction,
                 x = query,
                 fixed = TRUE)
+  query <- gsub(pattern = "_MIN_TOKENS_",
+                replacement = min_tokens,
+                x = query,
+                fixed = TRUE)
+
 
   net_on_chain <- shroomDK::auto_paginate_query(query, api_key)
   return(net_on_chain)

@@ -6,7 +6,7 @@
 \usage{
 address_token_balance(
   token_address,
-  min_tokens = 1e-04,
+  min_tokens = 0.0001,
   block_max,
   api_key = api_key
 )
@@ -34,7 +34,8 @@ Data frame of form:\tabular{lc}{
 }
 }
 \description{
-Address Token Balance
+Token balance of an address at a specific block height.
+Alice held 20 UNI at block 15,000,000.
 }
 \examples{
 \dontrun{

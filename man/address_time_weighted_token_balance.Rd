@@ -6,7 +6,7 @@
 \usage{
 address_time_weighted_token_balance(
   token_address,
-  min_tokens = 1e-04,
+  min_tokens = 0.0001,
   block_min = 0,
   block_max,
   amount_weighting = TRUE,
@@ -24,16 +24,24 @@ ignoring dust balances.}
 \item{block_max}{The block height to assess balance at (for reproducibility).}
 
 \item{amount_weighting}{Weight by amounts held across time, default TRUE. If FALSE, it treats
-all amounts as binary. Person had at least `min_tokens` at a block or they did not. To NOT
-weight by time, use `address_token_balance()` instead of this function.}
+all amounts as binary. Person had at least \code{min_tokens} at a block or they did not. To NOT
+weight by time, use \code{address_token_balance()} instead of this function.}
 
 \item{api_key}{Flipside Crypto ShroomDK API Key to create and access SQL queries.}
 }
 \value{
-A data frame
+A data frame of the form:\tabular{lc}{
+    \tab  \cr
+   ADDRESS \tab The EOA or contract that holds the balance \cr
+   TOKEN_ADDRESS \tab ERC20 address provided \cr
+   time_weighted_score \tab 1 point per 1 token held for 1,000 blocks (amount_weighting = FALSE is \cr
+   1 point per 1000 blocks where balance was above min_token) \tab  \cr
+}
 }
 \description{
-Time Weighted Address Token Balance
+Time weighted token balance of an address between 2 block heights.
+Holding 20 UNI for 10,000 blocks might be more interesting to score than someone
+buying 20 UNI right before a snapshot for an airdrop.
 }
 \examples{
 \dontrun{
