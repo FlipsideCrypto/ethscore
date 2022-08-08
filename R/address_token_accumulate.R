@@ -50,14 +50,25 @@ with token_changes AS (
         BLOCK <= _BLOCK_MAX_ AND
         TOKEN_ADDRESS = '_TOKEN_ADDRESS_'
         ORDER BY BLOCK DESC
-)
+),
 
 -- net change can be negative between blocks, 0 (often bots/aggregators), or positive (accumulation)
 
-  SELECT HOLDER as address, token_address, SUM(CHANGE) as net_change
+ holder_change AS(HOLDER as address, token_address, SUM(CHANGE) as net_change
   FROM token_changes
    GROUP BY HOLDER, token_address
-   HAVING net_change > _MIN_TOKENS_"
+   HAVING net_change > _MIN_TOKENS_
+ )
+
+
+-- include ability to filter out contract addresses if desired
+
+SELECT  token_address, holder_change.address, net_change,
+  IFNULL(tag_name, 'eoa') as address_type
+FROM holder_change LEFT JOIN
+  crosschain.core.address_tags ON
+  latest_holdings.address = crosschain.core.address_tags.address
+"
   }
 
   query <- gsub(pattern = "_TOKEN_ADDRESS_",

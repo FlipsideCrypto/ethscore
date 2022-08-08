@@ -92,9 +92,9 @@
       "RemoteRepo": "sdk",
       "RemoteUsername": "FlipsideCrypto",
       "RemoteRef": "HEAD",
-      "RemoteSha": "7de40bcd4f3c7e39bcdf957e74376954fb3daa37",
+      "RemoteSha": "c5dd70f702d57374f294d7107109ca1819dca863",
       "RemoteSubdir": "r/shroomDK",
-      "Hash": "b864fb5a534871af87dd5919d1bb9051",
+      "Hash": "020a689f6cd0bb4d8e0d7411c7fbe3ab",
       "Requirements": [
         "httr",
         "jsonlite"
