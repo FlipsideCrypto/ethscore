@@ -7,7 +7,7 @@
 #' @param token_address ERC20 token contract address to assess change in balance.
 #' @param block_min Initial block to start scoring balances over time, default 0 (genesis block).
 #' @param block_max The block height to assess balance at (for reproducibility).
-#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 #' ignoring dust balances. Default 1.
 #' @param api_key Flipside Crypto ShroomDK API Key to create and access SQL queries.
 #'

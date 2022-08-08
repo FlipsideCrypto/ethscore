@@ -5,7 +5,7 @@
 #' buying 20 UNI right before a snapshot for an airdrop.
 #'
 #' @param token_address ERC20 token contract address to assess balance.
-#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 #' ignoring dust balances.
 #' @param block_min Initial block to start scoring balances over time, default 0 (genesis block).
 #' @param block_max The block height to assess balance at (for reproducibility).
@@ -19,8 +19,7 @@
 #' | ------------- |:-------------:|
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
-#' | time_weighted_score | 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is
-#' 1 point per 1000 blocks where balance was above min_tokens) |
+#' | time_weighted_score | 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is 1 point per 1000 blocks where balance was above min_tokens) |
 #' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
 #' @md
 #' @export

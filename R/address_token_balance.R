@@ -5,7 +5,7 @@
 #' Alice held 20 UNI at block 15,000,000.
 #'
 #' @param token_address ERC20 token contract address to assess balance
-#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+#' @param min_tokens Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 #' ignoring dust balances.
 #' @param block_max The block height to assess balance at (for reproducibility)
 #' @param api_key Flipside Crypto ShroomDK API Key to create and access SQL queries.
