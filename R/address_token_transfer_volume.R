@@ -17,6 +17,7 @@
 #' | ADDRESS | The EOA or contract with the volume |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | VOLUME | amount of tokens transferred/traded between block_min and block_max |
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -49,13 +50,21 @@ with token_changes AS (
   WHERE BLOCK >= _BLOCK_MIN_ AND
         BLOCK <= _BLOCK_MAX_ AND
         TOKEN_ADDRESS = '_TOKEN_ADDRESS_'
-)
+),
 
 -- ignoring direction of change (absolute value) and summing is volume of change
+holder_volume AS (
 SELECT HOLDER as user_address, TOKEN_ADDRESS, SUM(ABS(CHANGE)) as VOLUME
 FROM token_changes
  GROUP BY HOLDER, TOKEN_ADDRESS
  HAVING VOLUME >= _MIN_TOKENS_
+)
+
+SELECT  holder_volume.address, token_address, VOLUME,
+  IFNULL(tag_name, 'eoa') as address_type
+FROM holder_volume LEFT JOIN
+  crosschain.core.address_tags ON
+  holder_volume.address = crosschain.core.address_tags.address
     "
   }
 

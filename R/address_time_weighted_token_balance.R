@@ -21,6 +21,7 @@
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | time_weighted_score | 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is
 #' 1 point per 1000 blocks where balance was above min_tokens) |
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -74,14 +75,23 @@ WITH block_tracked AS (
                 -- use 1 for any amount, otherwise use NEW_VALUE
        SELECT *, (_WEIGHT_ * (holder_next_block - block) )/1000 as time_points
     FROM block_tracked
-    )
+    ),
 
   -- Aggregation here assumes no minimum required points.
 
-    SELECT address, token_address, sum(time_points) as time_weighted_score
+ user_tp AS(SELECT address, token_address, sum(time_points) as time_weighted_score
 FROM time_points
 GROUP BY address, token_address
-ORDER BY time_weighted_score DESC;
+ORDER BY time_weighted_score DESC
+)
+
+
+SELECT  user_tp.address, token_address, NET_ONTO_CHAIN,
+  IFNULL(tag_name, 'eoa') as address_type
+FROM user_tp LEFT JOIN
+  crosschain.core.address_tags ON
+  user_tp.address = crosschain.core.address_tags.address
+
 "
   }
 

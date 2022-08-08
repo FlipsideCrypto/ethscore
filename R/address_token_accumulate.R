@@ -17,6 +17,7 @@
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | NET_CHANGE | net amount of tokens accumulated between block_min and block_max |
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -63,11 +64,11 @@ with token_changes AS (
 
 -- include ability to filter out contract addresses if desired
 
-SELECT  token_address, holder_change.address, net_change,
+SELECT   holder_change.address, token_address, net_change,
   IFNULL(tag_name, 'eoa') as address_type
 FROM holder_change LEFT JOIN
   crosschain.core.address_tags ON
-  latest_holdings.address = crosschain.core.address_tags.address
+  holder_change.address = crosschain.core.address_tags.address
 "
   }
 

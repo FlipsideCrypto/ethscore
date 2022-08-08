@@ -18,6 +18,7 @@
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | NET_ONTO_CHAIN | net amount of token taken from central exchanges between block_min and block_max |
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -77,14 +78,21 @@ cex_ramp AS (
 cex_adjusted AS (
   SELECT *, ((RAW_AMOUNT/1e_DECIMAL_REDUCTION_) * IFF(txtype = 'FROM_CEX', 1, -1)) as adjusted_amount
   FROM cex_ramp
-  )
+  ),
 
-  SELECT USER_ADDRESS as ADDRESS, CONTRACT_ADDRESS as TOKEN_ADDRESS,
+user_ontochain AS(SELECT USER_ADDRESS as ADDRESS, CONTRACT_ADDRESS as TOKEN_ADDRESS,
   SUM(ADJUSTED_AMOUNT) as NET_ONTO_CHAIN
   FROM cex_adjusted
   GROUP BY ADDRESS, TOKEN_ADDRESS
   HAVING NET_ONTO_CHAIN >= _MIN_TOKENS_
-  ;
+)
+
+
+SELECT   user_ontochain.address, token_address, NET_ONTO_CHAIN,
+  IFNULL(tag_name, 'eoa') as address_type
+FROM user_ontochain LEFT JOIN
+  crosschain.core.address_tags ON
+  user_ontochain.address = crosschain.core.address_tags.address
     "
   }
 
@@ -108,7 +116,6 @@ cex_adjusted AS (
                 replacement = min_tokens,
                 x = query,
                 fixed = TRUE)
-
 
   net_on_chain <- shroomDK::auto_paginate_query(query, api_key)
   return(net_on_chain)

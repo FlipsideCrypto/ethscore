@@ -21,7 +21,8 @@
 #' | SYMBOL        | ERC20 symbol, e.g., "UNI" |
 #' | OLD_VALUE     | Amount of token before latest trade or transfer |
 #' | NEW_VALUE     | Amount of token as of BLOCK, i.e. balance after their latest trade or transfer|
-#' | address_type  | Available info on the ADDRESS, e.g., contract, Gnosis Safe, or EOA. Note: may differ on different EVM chains.|
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'.
+#' If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
 #'
 #' @md
 #' @export
