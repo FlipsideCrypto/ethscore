@@ -36,6 +36,7 @@
 #'  api_key = readLines("api_key.txt")
 #' )
 #'}
+#'
 address_token_balance <- function(token_address,
                                   min_tokens = 0.0001,
                                   block_max,
