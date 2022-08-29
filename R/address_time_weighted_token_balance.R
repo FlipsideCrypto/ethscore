@@ -20,7 +20,9 @@
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | time_weighted_score | 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is 1 point per 1000 blocks where balance was above min_tokens) |
-#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe address'.
+#' If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction
+#' These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -52,17 +54,13 @@ address_time_weighted_token_balance <- function(token_address, min_tokens = 0.00
   query <- {
     "
 WITH block_tracked AS (
-    SELECT  BLOCK as block,
-            TX_HASH AS hash,
-            TOKEN_ADDRESS as token_address,
-            SYMBOL AS symbol,
-            HOLDER as address,
-            PREV_VALUE as old_value,
-            CURR_VALUE as new_value,
-           -- max block is the cutoff block number for airdrop eligibility; do not use default 0
-           -- lag(block, 1, block max)
+   SELECT USER_ADDRESS as address,
+           CONTRACT_ADDRESS as token_address,
+           BLOCK_NUMBER as block,
+           PREV_BAL as old_value,
+           CURRENT_BAL as new_value,
            lag(block, 1, _BLOCK_MAX_) over (partition by address, token_address order by block DESC) as holder_next_block
-    FROM flipside_prod_db.tokenflow_eth.tokens_balance_diffs
+      FROM ETHEREUM.CORE.EZ_BALANCE_DELTAS
     WHERE TOKEN_ADDRESS = '_QUERY_TOKENS_' AND
           BLOCK >= _BLOCK_MIN_ AND
           BLOCK <= _BLOCK_MAX_ AND
@@ -82,14 +80,19 @@ WITH block_tracked AS (
 FROM time_points
 GROUP BY address, token_address
 ORDER BY time_weighted_score DESC
+),
+
+ address_type AS (
+SELECT DISTINCT address,
+IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
+    TAG_NAME, 'EOA') as address_type
+FROM CROSSCHAIN.CORE.ADDRESS_TAGS
+WHERE BLOCKCHAIN = 'ethereum'
 )
 
-
-SELECT  user_tp.address, token_address, NET_ONTO_CHAIN,
-  IFNULL(tag_name, 'eoa') as address_type
+SELECT user_tp.address, token_address, time_weighted_score, address_type
 FROM user_tp LEFT JOIN
-  crosschain.core.address_tags ON
-  user_tp.address = crosschain.core.address_tags.address
+  address_type ON user_tp.address = address_type.address
 
 "
   }
@@ -116,6 +119,13 @@ FROM user_tp LEFT JOIN
                 fixed = TRUE)
 
   weighted_holding <- shroomDK::auto_paginate_query(query, api_key)
+
+  weighted_holding$ADDRESS_TYPE[is.na(weighted_holding$ADDRESS_TYPE)] <- "EOA-0tx"
+
+  if(nrow(weighted_holding) == 1e6){
+    warning("shroomDK returns a max of 1M rows. There may be data you missed. You can use multiple requests
+            with different BLOCK parameters to stitch together data.")
+  }
 
  return(weighted_holding)
 

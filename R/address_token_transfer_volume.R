@@ -17,7 +17,9 @@
 #' | ADDRESS | The EOA or contract with the volume |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | VOLUME | amount of tokens transferred/traded between block_min and block_max |
-#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe address'.
+#' If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction
+#' These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -44,27 +46,45 @@ address_transfer_volume <- function(token_address,
   query <-  {
     "
     -- change in token balance between block heights
-with token_changes AS (
-  SELECT *, (CURR_VALUE - PREV_VALUE) as CHANGE
-  FROM flipside_prod_db.tokenflow_eth.tokens_balance_diffs
-  WHERE BLOCK >= _BLOCK_MIN_ AND
-        BLOCK <= _BLOCK_MAX_ AND
-        TOKEN_ADDRESS = '_TOKEN_ADDRESS_'
-),
+    with token_changes AS (
+      SELECT
+      BLOCK_NUMBER as block,
+      CONTRACT_ADDRESS as token_address,
+      USER_ADDRESS as address,
+      (CURRENT_BAL - PREV_BAL) as CHANGE
+      FROM ETHEREUM.CORE.EZ_BALANCE_DELTAS
+      WHERE BLOCK >= _BLOCK_MIN_ AND
+      BLOCK <= _BLOCK_MAX_ AND
+      TOKEN_ADDRESS = '_TOKEN_ADDRESS_'
+      ORDER BY BLOCK DESC
+    ),
 
--- ignoring direction of change (absolute value) and summing is volume of change
-holder_volume AS (
-SELECT HOLDER as user_address, TOKEN_ADDRESS, SUM(ABS(CHANGE)) as VOLUME
-FROM token_changes
- GROUP BY HOLDER, TOKEN_ADDRESS
- HAVING VOLUME >= _MIN_TOKENS_
-)
+    -- net change can be negative between blocks, 0 (often bots/aggregators), or positive (accumulation)
 
-SELECT  holder_volume.address, token_address, VOLUME,
-  IFNULL(tag_name, 'eoa') as address_type
-FROM holder_volume LEFT JOIN
-  crosschain.core.address_tags ON
-  holder_volume.address = crosschain.core.address_tags.address
+    address_volume AS (
+      SELECT address, token_address, SUM(ABS(CHANGE)) as VOLUME
+      FROM token_changes
+      GROUP BY address, token_address
+      HAVING VOLUME > _MIN_TOKENS_
+    ),
+
+    address_type AS (
+      SELECT DISTINCT address,
+      IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
+          TAG_NAME, 'EOA') as address_type
+      FROM CROSSCHAIN.CORE.ADDRESS_TAGS
+      WHERE BLOCKCHAIN = 'ethereum'
+    )
+
+    -- include ability to filter out contract addresses if desired
+
+    SELECT address_volume.address,
+    token_address,
+    VOLUME,
+    address_type
+    FROM address_volume LEFT JOIN address_type ON
+    address_volume.address = address_type.address
+
     "
   }
 
@@ -88,5 +108,14 @@ FROM holder_volume LEFT JOIN
 
 
   volume <- shroomDK::auto_paginate_query(query, api_key)
+
+  volume$ADDRESS_TYPE[is.na(volume$ADDRESS_TYPE)] <- "EOA-0tx"
+
+  if(nrow(volume) == 1e6){
+    warning("shroomDK returns a max of 1M rows. There may be data you missed. You can use multiple requests
+            with different BLOCK parameters to stitch together data.")
+  }
+
+
   return(volume)
 }

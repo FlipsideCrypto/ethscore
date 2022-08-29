@@ -15,15 +15,13 @@
 #' | |  |
 #' | ------------- |:-------------:|
 #' | BLOCK         | Block where user last changed their balance (traded or transferred) |
-#' | HASH          | Tx hash where user last traded or transferred |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | ADDRESS       | The EOA or contract that holds the balance |
-#' | SYMBOL        | ERC20 symbol, e.g., "UNI" |
 #' | OLD_VALUE     | Amount of token before latest trade or transfer |
 #' | NEW_VALUE     | Amount of token as of BLOCK, i.e. balance after their latest trade or transfer|
-#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'.
-#' If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
-#'
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe address'.
+#' If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction
+#' These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -48,17 +46,15 @@ address_token_balance <- function(token_address,
   query <- {
     "
 WITH block_tracked AS (
-    SELECT TX_HASH AS hash,
-           SYMBOL AS symbol,
-           HOLDER as address,
-           TOKEN_ADDRESS as token_address,
-           BLOCK as block,
-           PREV_VALUE as old_value,
-           CURR_VALUE as new_value
-    FROM flipside_prod_db.tokenflow_eth.tokens_balance_diffs
-    WHERE BLOCK <= _BLOCK_MAX_ AND
+    SELECT USER_ADDRESS as address,
+           CONTRACT_ADDRESS as token_address,
+           BLOCK_NUMBER as block,
+           PREV_BAL as old_value,
+           CURRENT_BAL as new_value
+    FROM ETHEREUM.CORE.EZ_BALANCE_DELTAS
+    WHERE BLOCK_NUMBER <= _BLOCK_MAX_ AND
           TOKEN_ADDRESS = '_QUERY_TOKENS_'
-    ORDER BY BLOCK desc),
+    ORDER BY BLOCK_NUMBER desc),
 
 -- group by holder-token
 -- order by block desc
@@ -71,23 +67,29 @@ FROM block_tracked
 ),
 
 latest_holdings AS (
-SELECT block, hash, token_address, symbol, address, old_value, new_value
+SELECT block, token_address, address, old_value, new_value
 FROM token_holder
     WHERE rownum = 1 AND
     -- NOTE this applies to all tokens; to differentiate minimum for each token
     -- you can pull this table with 0 and filter after.
           new_value >= _MIN_TOKENS_
-    )
+    ),
+
+address_type AS (
+SELECT DISTINCT address,
+IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
+    TAG_NAME, 'EOA') as address_type
+FROM CROSSCHAIN.CORE.ADDRESS_TAGS
+WHERE BLOCKCHAIN = 'ethereum'
+)
 
 -- include ability to filter out contract addresses if desired
 
-SELECT block, hash, token_address,
-  symbol, latest_holdings.address,
-  old_value, new_value,
-  IFNULL(tag_name, 'eoa') as address_type
-FROM latest_holdings LEFT JOIN
-  crosschain.core.address_tags ON
-  latest_holdings.address = crosschain.core.address_tags.address
+SELECT block, token_address,
+   latest_holdings.address,
+  old_value, new_value, address_type
+FROM latest_holdings LEFT JOIN address_type ON
+  latest_holdings.address = address_type.address
 "
   }
 
@@ -105,6 +107,13 @@ FROM latest_holdings LEFT JOIN
                 fixed = TRUE)
 
   amount_holding <- shroomDK::auto_paginate_query(query, api_key)
+
+  amount_holding$ADDRESS_TYPE[is.na(amount_holding$ADDRESS_TYPE)] <- "EOA-0tx"
+
+  if(nrow(amount_holding) == 1e6){
+    warning("shroomDK returns a max of 1M rows. There may be data you missed. You can use multiple requests
+            with different BLOCK parameters to stitch together data.")
+  }
 
   return(amount_holding)
 }

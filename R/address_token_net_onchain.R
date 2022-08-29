@@ -18,7 +18,9 @@
 #' | ADDRESS       | The EOA or contract that holds the balance |
 #' | TOKEN_ADDRESS | ERC20 address provided |
 #' | NET_ONTO_CHAIN | net amount of token taken from central exchanges between block_min and block_max |
-#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe'. If neither it is assumed to be an 'eoa'. Note: may differ on different EVM chains.|
+#' | ADDRESS_TYPE  | If ADDRESS is known to be 'contract address' or 'gnosis safe address'.
+#' If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction
+#' These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains.|
 #' @md
 #' @export
 #' @import jsonlite httr
@@ -85,14 +87,21 @@ user_ontochain AS(SELECT USER_ADDRESS as ADDRESS, CONTRACT_ADDRESS as TOKEN_ADDR
   FROM cex_adjusted
   GROUP BY ADDRESS, TOKEN_ADDRESS
   HAVING NET_ONTO_CHAIN >= _MIN_TOKENS_
+),
+
+  address_type AS (
+SELECT DISTINCT address,
+IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
+    TAG_NAME, 'EOA') as address_type
+FROM CROSSCHAIN.CORE.ADDRESS_TAGS
+WHERE BLOCKCHAIN = 'ethereum'
 )
 
-
 SELECT   user_ontochain.address, token_address, NET_ONTO_CHAIN,
-  IFNULL(tag_name, 'eoa') as address_type
+ address_type
 FROM user_ontochain LEFT JOIN
-  crosschain.core.address_tags ON
-  user_ontochain.address = crosschain.core.address_tags.address
+  address_type ON
+  user_ontochain.address = address_type.address
     "
   }
 
@@ -118,5 +127,14 @@ FROM user_ontochain LEFT JOIN
                 fixed = TRUE)
 
   net_on_chain <- shroomDK::auto_paginate_query(query, api_key)
+
+  net_on_chain$ADDRESS_TYPE[is.na(net_on_chain$ADDRESS_TYPE)] <- "EOA-0tx"
+
+  if(nrow(net_on_chain) == 1e6){
+    warning("shroomDK returns a max of 1M rows. There may be data you missed. You can use multiple requests
+            with different BLOCK parameters to stitch together data.")
+  }
+
+
   return(net_on_chain)
 }
