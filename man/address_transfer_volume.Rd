@@ -19,7 +19,7 @@ address_transfer_volume(
 
 \item{block_max}{The block height to assess balance at (for reproducibility).}
 
-\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 ignoring dust balances. Default 1.}
 
 \item{api_key}{Flipside Crypto ShroomDK API Key to create and access SQL queries.}
@@ -30,6 +30,9 @@ A data frame of the form:\tabular{lc}{
    ADDRESS \tab The EOA or contract with the volume \cr
    TOKEN_ADDRESS \tab ERC20 address provided \cr
    VOLUME \tab amount of tokens transferred/traded between block_min and block_max \cr
+   ADDRESS_TYPE \tab If ADDRESS is known to be 'contract address' or 'gnosis safe address'. \cr
+   If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction \tab  \cr
+   These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains. \tab  \cr
 }
 }
 \description{

@@ -6,7 +6,7 @@
 \usage{
 address_token_balance(
   token_address,
-  min_tokens = 0.0001,
+  min_tokens = 1e-04,
   block_max,
   api_key = api_key
 )
@@ -14,7 +14,7 @@ address_token_balance(
 \arguments{
 \item{token_address}{ERC20 token contract address to assess balance}
 
-\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 ignoring dust balances.}
 
 \item{block_max}{The block height to assess balance at (for reproducibility)}
@@ -25,12 +25,13 @@ ignoring dust balances.}
 Data frame of form:\tabular{lc}{
     \tab  \cr
    BLOCK \tab Block where user last changed their balance (traded or transferred) \cr
-   HASH \tab Tx hash where user last traded or transferred \cr
    TOKEN_ADDRESS \tab ERC20 address provided \cr
    ADDRESS \tab The EOA or contract that holds the balance \cr
-   SYMBOL \tab ERC20 symbol, e.g., "UNI" \cr
    OLD_VALUE \tab Amount of token before latest trade or transfer \cr
    NEW_VALUE \tab Amount of token as of BLOCK, i.e. balance after their latest trade or transfer \cr
+   ADDRESS_TYPE \tab If ADDRESS is known to be 'contract address' or 'gnosis safe address'. \cr
+   If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction \tab  \cr
+   These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains. \tab  \cr
 }
 }
 \description{
@@ -46,4 +47,5 @@ token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI toke
  api_key = readLines("api_key.txt")
 )
 }
+
 }

@@ -22,7 +22,7 @@ address_net_on_chain(
 
 \item{decimal_reduction}{Most ERC20 have 18 decimals, but stablecoins often have only 6.}
 
-\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 ignoring dust balances. Default 0.0001. Use -Inf to include net sellers (but note: API max is 1M rows.).}
 
 \item{api_key}{Flipside Crypto ShroomDK API Key to create and access SQL queries.}
@@ -33,6 +33,9 @@ A data frame of the form:\tabular{lc}{
    ADDRESS \tab The EOA or contract that holds the balance \cr
    TOKEN_ADDRESS \tab ERC20 address provided \cr
    NET_ONTO_CHAIN \tab net amount of token taken from central exchanges between block_min and block_max \cr
+   ADDRESS_TYPE \tab If ADDRESS is known to be 'contract address' or 'gnosis safe address'. \cr
+   If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction \tab  \cr
+   These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains. \tab  \cr
 }
 }
 \description{

@@ -6,7 +6,7 @@
 \usage{
 address_time_weighted_token_balance(
   token_address,
-  min_tokens = 0.0001,
+  min_tokens = 1e-04,
   block_min = 0,
   block_max,
   amount_weighting = TRUE,
@@ -16,7 +16,7 @@ address_time_weighted_token_balance(
 \arguments{
 \item{token_address}{ERC20 token contract address to assess balance.}
 
-\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful to
+\item{min_tokens}{Minimum amount of tokens acknowledged. Already decimal adjusted, useful for
 ignoring dust balances.}
 
 \item{block_min}{Initial block to start scoring balances over time, default 0 (genesis block).}
@@ -34,8 +34,10 @@ A data frame of the form:\tabular{lc}{
     \tab  \cr
    ADDRESS \tab The EOA or contract that holds the balance \cr
    TOKEN_ADDRESS \tab ERC20 address provided \cr
-   time_weighted_score \tab 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is \cr
-   1 point per 1000 blocks where balance was above min_tokens) \tab  \cr
+   time_weighted_score \tab 1 point per 1 token held per 1,000 blocks (amount_weighting = FALSE is 1 point per 1000 blocks where balance was above min_tokens) \cr
+   ADDRESS_TYPE \tab If ADDRESS is known to be 'contract address' or 'gnosis safe address'. \cr
+   If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction \tab  \cr
+   These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains. \tab  \cr
 }
 }
 \description{
