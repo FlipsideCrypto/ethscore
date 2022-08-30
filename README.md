@@ -4,6 +4,15 @@ ETHSCORE is a framework for identifying addresses and scoring their behavior. Wi
 
 Use cases such as under-collateralized credit or 'social' scoring may fall under this framework, but that is not the direct intention. ethscore was originally developed to assist in airdrop design so new protocols could more easily identify users for their applications that have a history of using similar apps and bribe them with tokens/ownership in the protocol as a direct to customer: Customer Acquisition Cost.
 
+## Installation
+
+Currently installation of the R package is best done via devtools::install_github().
+
+```
+require(devtools)
+devtools::install_github(repo = 'FlipsideCrypto/ethscore')
+```
+
 ## Available Metrics
 
 Note: all documentation available within the ethscore package: `?ethscore::address_token_balance`
