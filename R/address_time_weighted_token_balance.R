@@ -37,7 +37,7 @@
 #'  api_key = readLines("api_key.txt")
 #' )
 #'}
-address_time_weighted_token_balance <- function(token_address, min_tokens = 0.0001,
+address_time_weighted_token_balance <- function(token_address, min_tokens = 0.01,
                                                 block_min = 0,
                                                 block_max,
                                                 amount_weighting = TRUE,

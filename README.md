@@ -6,7 +6,7 @@ Use cases such as under-collateralized credit or 'social' scoring may fall under
 
 ## Available Metrics
 
-Note: all documentation available within the ethscore package, e.g., `?ethscore::address_token_balance`
+Note: all documentation available within the ethscore package: `?ethscore::address_token_balance`
 
 All functions leverage Flipside Crypto's free [shroomDK API](https://sdk.flipsidecrypto.xyz/shroomdk) and require a shroomDK API Key and the [shroomDK R package](https://github.com/FlipsideCrypto/sdk/tree/main/r/shroomDK). ShroomDK returns a maximum of 1,000,000 rows of data. Vary your block_min and block_max accordingly to stitch together large data if desired, or use min_tokens to remove more dust accounts.
 
@@ -111,17 +111,15 @@ Arguments include:
 -   block_max: The block height to assess balance at.
 -   api_key: Flipside Crypto ShroomDK API Key to create and access SQL queries.
 
-Example: 
+Example:
 
-```
-address_token_accumulate(
-token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI token
- block_min = 10000000,
- block_max = 15000000,
- min_tokens = 1,
- api_key = readLines("api_key.txt")
-)
-```
+    address_token_accumulate(
+    token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI token
+     block_min = 10000000,
+     block_max = 15000000,
+     min_tokens = 1,
+     api_key = readLines("api_key.txt")
+    )
 
 Returns a data frame of the following:
 
@@ -130,3 +128,33 @@ Returns a data frame of the following:
 -   NET_CHANGE: net amount of tokens accumulated between block_min and block_max
 -   ADDRESS_TYPE: If ADDRESS is known to be 'contract address' or 'gnosis safe address'. If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction. These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains.
 
+### address_net_on_chain()
+
+Net transfer amount of tokens from a central exchange between two block heights. By default excludes net sellers. Alice net received 200 UNI from central exchanges between blocks 10,000,000 and 15,000,000.
+
+Arguments include:
+
+-   token_address: ERC20 token contract address to assess balance
+-   min_tokens: Minimum amount of tokens acknowledged. Already decimal adjusted, useful for ignoring dust balances. Default 0.01. Use -Inf to include net sellers (but note: API max is 1M rows).
+-   block_min: Initial block to start scoring balances over time, default 0 (genesis block).
+-   block_max: The block height to assess balance at.
+-   decimal_reduction: Most ERC20 have 18 decimals, but stablecoins often have only 6. Default is 18.
+-   api_key: Flipside Crypto ShroomDK API Key to create and access SQL queries.
+
+Example:
+
+    address_net_on_chain(
+    token_address = tolower("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"), #UNI token
+     block_min = 10000000,
+     block_max = 15000000,
+     decimal_reduction = 18,
+     min_tokens = 1,
+     api_key = readLines("api_key.txt")
+    )
+
+Returns a data frame of the following:
+
+-   ADDRESS: The EOA or contract that holds the balance
+-   TOKEN_ADDRESS: ERC20 address provided
+-   NET_ONTO_CHAIN: net amount of token taken from central exchanges between block_min and block_max. Double check `decimal_reduction` if amounts seem off.
+-   ADDRESS_TYPE: If ADDRESS is known to be 'contract address' or 'gnosis safe address'. If neither it is assumed to be an 'EOA'. Some EOAs may have a balance but have never initiated a transaction. These are noted as 'EOA-0tx' Note: contracts, including gnosis safes may not have consistent owners across different EVM chains.

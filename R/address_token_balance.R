@@ -36,7 +36,7 @@
 #'}
 #'
 address_token_balance <- function(token_address,
-                                  min_tokens = 0.0001,
+                                  min_tokens = 0.01,
                                   block_max,
                                   api_key = api_key){
 
