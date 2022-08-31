@@ -89,10 +89,14 @@ user_ontochain AS(SELECT USER_ADDRESS as ADDRESS, CONTRACT_ADDRESS as TOKEN_ADDR
   HAVING NET_ONTO_CHAIN >= _MIN_TOKENS_
 ),
 
-  address_type AS (
+
+address_type AS (
 SELECT DISTINCT address,
 IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
-    TAG_NAME, 'EOA') as address_type
+    TAG_NAME,
+    IFF(address NOT IN (SELECT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS
+WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address', 'gnosis safe address')), 'EOA', TAG_NAME))
+    as address_type
 FROM CROSSCHAIN.CORE.ADDRESS_TAGS
 WHERE BLOCKCHAIN = 'ethereum'
 )
