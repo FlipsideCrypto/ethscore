@@ -6,7 +6,7 @@
 \usage{
 address_time_weighted_token_balance(
   token_address,
-  min_tokens = 1e-04,
+  min_tokens = 0.01,
   block_min = 0,
   block_max,
   amount_weighting = TRUE,

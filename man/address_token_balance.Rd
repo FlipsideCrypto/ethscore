@@ -6,7 +6,7 @@
 \usage{
 address_token_balance(
   token_address,
-  min_tokens = 1e-04,
+  min_tokens = 0.01,
   block_max,
   api_key = api_key
 )
