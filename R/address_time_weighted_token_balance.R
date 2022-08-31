@@ -80,7 +80,7 @@ WITH block_tracked AS (
 FROM time_points
 GROUP BY address, token_address
 ORDER BY time_weighted_score DESC
-),
+)
 
 SELECT address, token_address, time_weighted_score,
   CASE
