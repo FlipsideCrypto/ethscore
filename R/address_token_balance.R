@@ -73,26 +73,20 @@ FROM token_holder
     -- NOTE this applies to all tokens; to differentiate minimum for each token
     -- you can pull this table with 0 and filter after.
           new_value >= _MIN_TOKENS_
-    ),
-
-address_type AS (
-SELECT DISTINCT address,
-IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
-    TAG_NAME,
-    IFF(address NOT IN (SELECT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address', 'gnosis safe address')), 'EOA', TAG_NAME))
-    as address_type
-FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum'
-)
-
+    )
 -- include ability to filter out contract addresses if desired
 
+
 SELECT block, token_address,
-   latest_holdings.address,
-  old_value, new_value, address_type
-FROM latest_holdings LEFT JOIN address_type ON
-  latest_holdings.address = address_type.address
+   address,
+  old_value, new_value,
+  CASE
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('gnosis safe address')) THEN 'gnosis safe'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address')) THEN 'contract'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('active on ethereum last 7')) THEN 'EOA'
+    ELSE 'EOA-0tx'
+END as address_type
+FROM latest_holdings
 "
   }
 

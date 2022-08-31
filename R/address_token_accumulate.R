@@ -66,28 +66,20 @@ SELECT address, token_address, SUM(CHANGE) as net_change
   FROM token_changes
    GROUP BY address, token_address
    HAVING net_change > _MIN_TOKENS_
- ),
-
-
-address_type AS (
-SELECT DISTINCT address,
-IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
-    TAG_NAME,
-    IFF(address NOT IN (SELECT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address', 'gnosis safe address')), 'EOA', TAG_NAME))
-    as address_type
-FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum'
-)
+ )
 
 -- include ability to filter out contract addresses if desired
 
 SELECT address_change.address,
 token_address,
 net_change,
-address_type
-FROM address_change LEFT JOIN address_type ON
-  address_change.address = address_type.address
+  CASE
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('gnosis safe address')) THEN 'gnosis safe'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address')) THEN 'contract'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('active on ethereum last 7')) THEN 'EOA'
+    ELSE 'EOA-0tx'
+END as address_type
+FROM address_change
 
 "
   }

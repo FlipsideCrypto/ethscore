@@ -82,22 +82,14 @@ GROUP BY address, token_address
 ORDER BY time_weighted_score DESC
 ),
 
-
-address_type AS (
-SELECT DISTINCT address,
-IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
-    TAG_NAME,
-    IFF(address NOT IN (SELECT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address', 'gnosis safe address')), 'EOA', TAG_NAME))
-    as address_type
-FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum'
-)
-
-SELECT user_tp.address, token_address, time_weighted_score, address_type
-FROM user_tp LEFT JOIN
-  address_type ON user_tp.address = address_type.address
-
+SELECT address, token_address, time_weighted_score,
+  CASE
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('gnosis safe address')) THEN 'gnosis safe'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address')) THEN 'contract'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('active on ethereum last 7')) THEN 'EOA'
+    ELSE 'EOA-0tx'
+END as address_type
+FROM user_tp
 "
   }
 

@@ -66,28 +66,21 @@ address_transfer_volume <- function(token_address,
       FROM token_changes
       GROUP BY address, token_address
       HAVING VOLUME > _MIN_TOKENS_
-    ),
+    )
 
-
-address_type AS (
-SELECT DISTINCT address,
-IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
-    TAG_NAME,
-    IFF(address NOT IN (SELECT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address', 'gnosis safe address')), 'EOA', TAG_NAME))
-    as address_type
-FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum'
-)
 
     -- include ability to filter out contract addresses if desired
 
     SELECT address_volume.address,
     token_address,
     VOLUME,
-    address_type
-    FROM address_volume LEFT JOIN address_type ON
-    address_volume.address = address_type.address
+     CASE
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('gnosis safe address')) THEN 'gnosis safe'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address')) THEN 'contract'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('active on ethereum last 7')) THEN 'EOA'
+    ELSE 'EOA-0tx'
+END as address_type
+    FROM address_volume
 
     "
   }

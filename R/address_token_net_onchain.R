@@ -87,25 +87,16 @@ user_ontochain AS(SELECT USER_ADDRESS as ADDRESS, CONTRACT_ADDRESS as TOKEN_ADDR
   FROM cex_adjusted
   GROUP BY ADDRESS, TOKEN_ADDRESS
   HAVING NET_ONTO_CHAIN >= _MIN_TOKENS_
-),
-
-
-address_type AS (
-SELECT DISTINCT address,
-IFF(TAG_NAME IN ('contract address', 'gnosis safe address'),
-    TAG_NAME,
-    IFF(address NOT IN (SELECT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address', 'gnosis safe address')), 'EOA', TAG_NAME))
-    as address_type
-FROM CROSSCHAIN.CORE.ADDRESS_TAGS
-WHERE BLOCKCHAIN = 'ethereum'
 )
 
-SELECT   user_ontochain.address, token_address, NET_ONTO_CHAIN,
- address_type
-FROM user_ontochain LEFT JOIN
-  address_type ON
-  user_ontochain.address = address_type.address
+
+SELECT address, token_address, NET_ONTO_CHAIN,
+  CASE
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('gnosis safe address')) THEN 'gnosis safe'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('contract address')) THEN 'contract'
+    WHEN address IN (SELECT DISTINCT address FROM CROSSCHAIN.CORE.ADDRESS_TAGS WHERE BLOCKCHAIN = 'ethereum' AND TAG_NAME IN ('active on ethereum last 7')) THEN 'EOA'
+    ELSE 'EOA-0tx'
+END as address_type
     "
   }
 
