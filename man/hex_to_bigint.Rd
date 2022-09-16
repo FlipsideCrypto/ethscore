@@ -7,7 +7,7 @@
 hex_to_bigint(hex)
 }
 \arguments{
-\item{hex}{Hex to convert to big integer. Leading 0s are appropriately ignored.}
+\item{hex}{vector of hex with leading 0x, as characters to convert to big integer. Leading 0s are appropriately ignored.}
 }
 \value{
 vector of big integer in character format.

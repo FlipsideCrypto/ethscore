@@ -3,7 +3,7 @@
 #' Converts HEX to extremely large numbers to make them workable. Most specifically
 #' used for NFTs with millions of millions of token IDs. see `get_ens()` as a main example.
 #'
-#' @param hex Hex to convert to big integer. Leading 0s are appropriately ignored.
+#' @param hex vector of hex with leading 0x, as characters to convert to big integer. Leading 0s are appropriately ignored.
 #'
 #' @return vector of big integer in character format.
 #' @export
