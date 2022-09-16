@@ -1,12 +1,11 @@
 Package: ethscore
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: Out of the Box Ethereum Scoring
+Version: 0.2.0
+Author: Carlos Mercado
+Maintainer: Carlos Mercado <carlos.mercado@flipsidecrypto.com>
+Description: Precurated SQL queries with the Flipside Crypto shroomDK API for accessing information on addresses and their token interactions.
+License: MIT
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.1
